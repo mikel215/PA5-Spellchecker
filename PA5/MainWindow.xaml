@@ -22,15 +22,19 @@
         </Grid.RowDefinitions>
 
         <Label Grid.Column="0" Grid.Row="1" Content="Enter input file name to correct:" />
-        <TextBox Name="InputFile" Grid.Column="1" Grid.Row="1" Margin="4,2,20,4" KeyDown="TextBox_OnKeyDownHandler"/>
+        <TextBox Name="InputFile" Grid.Column="1" Grid.Row="1" Margin="4,2,20,4" 
+                 KeyDown="TextBox_OnKeyDownHandler" Text="sample1.txt"/>
+                 
         <Label Grid.Column="0" Grid.Row="2" Content="Enter desired output file name:" />
-        <TextBox Name="OutputFile" Grid.Column="1" Grid.Row="2" Margin="4,2,20,4" />
+        <TextBox Name="OutputFile" Grid.Column="1" Grid.Row="2" Margin="4,2,20,4" 
+                 KeyDown="TextBox_OnKeyDownHandler" Text="autocorrect_results.csv"/>
         <Button Name="StartProgram" Grid.Column="1" Grid.Row="3" Margin="40,5,40,5" 
                 Content="Start" Click="StartProgram_Click"/>
 
         <ListBox Name="outputBox" Grid.Row="5" Grid.RowSpan="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="6,6,15,6"/>
 
-        <Button Name="SelectionSubmit" Grid.Row="6" Grid.Column="1" Margin="50,6,50,6" Click="SelectionSubmit_Click" />
+        <Button Name="SelectionSubmit" Grid.Row="6" Grid.Column="1" Margin="50,6,50,10" 
+                Click="SelectionSubmit_Click" Content="Enter"/>
 
         <Grid Grid.Row="6" Grid.Column="0">
             <Grid.ColumnDefinitions>
@@ -38,7 +42,8 @@
                 <ColumnDefinition Width="90"/>
             </Grid.ColumnDefinitions>
             <Label Grid.Column="0" Grid.Row="0" Content="Enter selection:" />
-            <TextBox Name="selectionBox" Grid.Column="1" Margin="4,4,4,4" />
+            <TextBox Name="selectionBox" Grid.Column="1" Margin="4,4,4,16" 
+                     KeyDown="SuggestionBox_OnKeyDownHandler"/>
         </Grid>
 
     </Grid>

@@ -21,7 +21,8 @@ namespace PA5
     /// </summary>
     public partial class MainWindow : Window
     {
-        private String input = "";
+        Queue<KeyValuePair<string, List<string>>> glbl_queue = new Queue<KeyValuePair<string,List<string>>>();
+        Dictionary<string, List<string>> toWrite = new Dictionary<string, List<string>>();
         // 1. Read words from text to list(our dictionary)
         public static readonly string[] wordFile = File.ReadAllLines(@".../.../words.txt");
         public static readonly List<string> dictionaryList= new List<string>(wordFile);
@@ -141,9 +142,76 @@ namespace PA5
             return matrix[first.Length - 1, second.Length - 1];
         }
 
+        private void SuggestionBox_OnKeyDownHandler(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SelectionSubmit_Click(this, new RoutedEventArgs());
+            }
+        }
+
         private void SelectionSubmit_Click(object sender, RoutedEventArgs e)
         {
-            input = selectionBox.Text;
+            if(selectionBox.Text == "")
+            {
+                return;
+            }
+
+            string input = selectionBox.Text;
+            KeyValuePair<string, List<string>> item = glbl_queue.Dequeue();
+
+            // make results list
+            int inputNum = Int32.Parse(input);
+            if(inputNum > 1)
+            {
+                inputNum = inputNum - 2;
+                List<string> current = item.Value;
+                string newTop = current[inputNum];
+                current.Remove(newTop);
+                current.Insert(0, newTop);
+                toWrite.Add(item.Key, current);
+            }
+            else
+            {
+                // add word?
+            }
+            // if queue is empty, write results to file, return
+            if(glbl_queue.Count == 0)
+            {
+                outputBox.Items.Clear();
+                selectionBox.Clear();
+
+                string path = OutputFile.Text;
+                string txtToFile = "";
+                foreach(KeyValuePair<string,List<string>> c in toWrite)
+                {
+                    txtToFile += c.Key + ",";
+                    foreach(string suggests in c.Value)
+                    {
+                        txtToFile += suggests + ",";
+                    }
+                    txtToFile += "\r\n";
+                }
+                File.WriteAllText(path, txtToFile);
+
+
+                outputBox.Items.Add("Results written to file.");
+                return;
+            }
+
+            // output the next words suggestions
+            KeyValuePair<string, List<string>> entry = glbl_queue.First();
+            outputBox.Items.Clear();
+            selectionBox.Clear();
+            outputBox.Items.Add("1. None of the words below are correct");
+            for(int i = 0; i < 10; i++)
+            {
+                string s = (i + 2).ToString()+ ". " + entry.Value[i];
+                outputBox.Items.Add(s);
+
+            }
+
+            selectionBox.Focus();
         }
 
         private void TextBox_OnKeyDownHandler(object sender, KeyEventArgs e)
@@ -169,94 +237,28 @@ namespace PA5
 
             // Show user data, then prompt for correct answer
             // dictionary to store results <misspelled word, correction>
-            Dictionary<string, string> results = new Dictionary<string, string>();
             if(suggestionMap.Count > 0)
             {
-                KeyValuePair<string, List<string>> entry = suggestionMap.First();
-                outputBox.Items.Add("1. None of the words below are correct");
-
-                for(int i = 0; i < 10; i++)
+                // suggestionMap -> queue
+                foreach(KeyValuePair<string,List<string>> item in suggestionMap)
                 {
-                    string s = (i + 2).ToString()+ ". " + entry.Value[i];
-                    outputBox.Items.Add(s);
-
+                    glbl_queue.Enqueue(item);
                 }
-            }
-
-            selectionBox.Focus();
-
-        }
-
-        /*
-        public int CalculateEditDistance(ref string first, ref string second,
-                                         int first_index, int second_index,
-                                         ref List<List<int>> mem )
-        {
-            int cost = 0;
-
-            //ensure index is in bounds
-            if (first_index >= first.Length)
-            {
-                //at is point, we can no longer transform and delete doesn't 
-                //make sense because we're smaller
-                return second.Length - second_index;
-            }
-            else if (second_index >= second.Length)
-            {
-                return first.Length - first_index;
-            }
-
-            //is there currently alignment at the indices?
-            if (first[first_index] == second[second_index])
-            {
-                return CalculateEditDistance(
-                   ref first,
-                    ref second,
-                   first_index + 1,
-                   second_index + 1,
-                   ref mem);
             }
             else
             {
-                //before we make recursive calls, check mem
-                //value greater than -1 means that we've calculated this before
-                int insert_cost = mem[first_index][second_index + 1];
-                int delete_cost = mem[first_index + 1][second_index];
-                int transform_cost = mem[first_index + 1][second_index + 1];
-
-                //recursive calls must be made if we have bad memory
-                if (insert_cost == -1)
-                {
-                    insert_cost = CalculateEditDistance(
-                       ref first,
-                       ref second,
-                       first_index,
-                       second_index + 1,
-                       ref mem);
-                }
-                if (delete_cost == -1)
-                {
-                    delete_cost = CalculateEditDistance(
-                       ref first,
-                       ref second,
-                       first_index + 1,
-                       second_index,
-                       ref mem);
-                }
-                if (transform_cost == -1)
-                {
-                    transform_cost = CalculateEditDistance(
-                       ref first,
-                       ref second,
-                       first_index + 1,
-                       second_index + 1,
-                       ref mem);
-                }
-                cost = 1 + Math.Min(Math.Min(insert_cost, delete_cost), transform_cost);
-                mem[first_index][second_index] = cost;
-                return cost;
+                return;
             }
+
+            KeyValuePair<string, List<string>> entry = suggestionMap.First();
+            outputBox.Items.Add("1. None of the words below are correct");
+            for(int i = 0; i < 10; i++)
+            {
+                string s = (i + 2).ToString()+ ". " + entry.Value[i];
+                outputBox.Items.Add(s);
+
+            }
+            selectionBox.Focus();
         }
-        */
     }
 }
