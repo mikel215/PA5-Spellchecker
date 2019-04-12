@@ -42,6 +42,24 @@ namespace PA5
             }
         }
 
+        // Operator
+        public static bool operator< (WordNode a, WordNode b)
+        {
+            if(a.EditDistance < b.EditDistance)
+            {
+                return true;
+            }
+            return false;
+        }
+        public static bool operator> (WordNode a, WordNode b)
+        {
+            if(a.EditDistance > b.EditDistance)
+            {
+                return true;
+            }
+            return false;
+        }
+
 
     }
 }

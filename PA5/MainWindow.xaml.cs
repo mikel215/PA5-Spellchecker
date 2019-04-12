@@ -21,27 +21,61 @@ namespace PA5
     /// </summary>
     public partial class MainWindow : Window
     {
+        private String input = "";
+        // 1. Read words from text to list(our dictionary)
+        public static readonly string[] wordFile = File.ReadAllLines(@".../.../words.txt");
+        public static readonly List<string> dictionaryList= new List<string>(wordFile);
+
         public MainWindow()
         {
             InitializeComponent();
+            InputFile.Focus();
 
-            // 1. Read words from text to list(our dictionary)
-            var wordFile = File.ReadAllLines(@".../.../words.txt");
-            var dictionaryList= new List<string>(wordFile);
+        }
 
-            // 2. Prompt input file 
-            StreamReader reader = new StreamReader(@".../.../sample1.txt");
-            List<string> toCorrectList = reader.ReadToEnd().Split(' ').ToList();
+        public Dictionary<string,List<string>> GetSuggestions(List<string> list)
+        {
+            Dictionary<string, List<string>> map = new Dictionary<string, List<string>>();
 
-            // Find misspelled words
+            foreach(string word in list)
+            {
+                List<string> suggestions = new List<string>();
+                PriorityQueue pq = new PriorityQueue();
+
+                // Make priority queue out of words with edit distances
+                foreach(string item in dictionaryList)
+                {
+                    int distance = CalculateEditDistanceBU( word,item);
+                    WordNode newWord = new WordNode(item, distance);
+
+                    // add WordNode to priority queue
+                    pq.Insert(newWord);
+                }
+
+                // Pop the top 10 items in PQ
+                for(int i = 0; i< 10; i++)
+                {
+                    WordNode newNode = pq.Pop();
+                    suggestions.Add(newNode.Word);
+
+                }
+                map.Add(word, suggestions);
+            }
+            return map;
+        }
+
+
+        public List<string> FindMisspelled(List<string> list)
+        {
             List<string> misspelled = new List<string>();
-            foreach(string word in toCorrectList)
+
+            foreach(string word in list)
             {
                 // strip punctuation
                 string newWord = new string(word.Where(c => !char.IsPunctuation(c)).ToArray());
 
                 // If current word is not in our dicitonary, add to misspelled word list
-                if(dictionaryList.Any(item => item != newWord))
+                if(! dictionaryList.Contains(newWord))
                 {
                     misspelled.Add(newWord);
                 }
@@ -51,34 +85,11 @@ namespace PA5
                 }
 
             }
-
-            // 3. Compute 10 most probable suggestions for each misspelled word
-            Dictionary<string, List<string>> suggestionMap = new Dictionary<string, List<string>>();
-
-            // a. compute 10 most probable suggestions for each word
-            foreach(string word in misspelled)
-            {
-                List<string> suggestions = new List<string>();
-
-                // Make priority queue out of words with edit distances
-                foreach(string item in dictionaryList)
-                {
-                    int distance = CalculateEditDistanceBU( word,item);
-                    WordNode newWord = new WordNode(item, distance);
-                    continue;
-
-                }
-
-                for(int i = 0; i< 10; i++)
-                {
-                    // get edit distances
-
-                }
-            }
+            return misspelled;
 
         }
 
-        int CalculateEditDistanceBU(string first,string second)
+        public int CalculateEditDistanceBU(string first,string second)
         {
             // List<List<int>> matrix = new List<List<int>>();
             int[,] matrix = new int[first.Length, second.Length];
@@ -128,6 +139,52 @@ namespace PA5
             }
 
             return matrix[first.Length - 1, second.Length - 1];
+        }
+
+        private void SelectionSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            input = selectionBox.Text;
+        }
+
+        private void TextBox_OnKeyDownHandler(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                StartProgram_Click(this, new RoutedEventArgs());
+            }
+        }
+
+        private void StartProgram_Click(object sender, RoutedEventArgs e)
+        {
+            // 2. Prompt input file 
+            string inputFile = InputFile.Text;
+            StreamReader reader = new StreamReader($".../.../{inputFile}");
+            List<string> toCorrectList = reader.ReadToEnd().Split(' ').ToList();
+
+            // Find misspelled words
+            List<string> misspelled = FindMisspelled(toCorrectList);
+
+            // 3a. Compute 10 most probable suggestions for each misspelled word
+            Dictionary<string, List<string>> suggestionMap = GetSuggestions(misspelled);
+
+            // Show user data, then prompt for correct answer
+            // dictionary to store results <misspelled word, correction>
+            Dictionary<string, string> results = new Dictionary<string, string>();
+            if(suggestionMap.Count > 0)
+            {
+                KeyValuePair<string, List<string>> entry = suggestionMap.First();
+                outputBox.Items.Add("1. None of the words below are correct");
+
+                for(int i = 0; i < 10; i++)
+                {
+                    string s = (i + 2).ToString()+ ". " + entry.Value[i];
+                    outputBox.Items.Add(s);
+
+                }
+            }
+
+            selectionBox.Focus();
+
         }
 
         /*
