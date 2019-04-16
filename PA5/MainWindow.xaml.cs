@@ -41,7 +41,7 @@ namespace PA5
             foreach(string word in list)
             {
                 List<string> suggestions = new List<string>();
-                PriorityQueue pq = new PriorityQueue();
+                PriorityQueueVector pq = new PriorityQueueVector();
 
                 // Make priority queue out of words with edit distances
                 foreach(string item in dictionaryList)
@@ -54,6 +54,7 @@ namespace PA5
                 }
 
                 // Pop the top 10 items in PQ
+                
                 for(int i = 0; i< 10; i++)
                 {
                     WordNode newNode = pq.Pop();

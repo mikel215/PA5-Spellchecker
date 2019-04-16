@@ -54,8 +54,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="PriorityQueueAVL.cs" />
-    <Compile Include="PriorityQueueVector.cs" />
+    <Compile Include="PriorityQueue.cs" />
     <Compile Include="WordNode.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

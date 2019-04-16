@@ -30,10 +30,16 @@ namespace PA5
                 return;
             }
 
+            //add at the end
             _priorityQueue.Add(node);
-            for(int i = 0; i < size; i++)
+            int i = size - 1;
+            while(i != 0 && _priorityQueue[(i-1)/2] > _priorityQueue[i])
             {
-                MakeHeap(ref _priorityQueue, size, i);
+                WordNode temp = _priorityQueue[i];
+                _priorityQueue[i] = _priorityQueue[(i-1)/2];
+                _priorityQueue[(i-1)/2] = temp;
+
+                i = (i - 1) / 2;
             }
             return;
 
