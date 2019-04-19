@@ -41,7 +41,7 @@ namespace PA5
             foreach(string word in list)
             {
                 List<string> suggestions = new List<string>();
-                PriorityQueueVector pq = new PriorityQueueVector();
+                PriorityQueue pq = new PriorityQueue();
 
                 // Make priority queue out of words with edit distances
                 foreach(string item in dictionaryList)
@@ -197,6 +197,7 @@ namespace PA5
 
 
                 outputBox.Items.Add("Results written to file.");
+                
                 return;
             }
 
@@ -204,6 +205,11 @@ namespace PA5
             KeyValuePair<string, List<string>> entry = glbl_queue.First();
             outputBox.Items.Clear();
             selectionBox.Clear();
+
+            List<string> toCorrectList = GetList();
+            string context = GetContext(entry.Key, toCorrectList);
+            outputBox.Items.Add("Unknown word: " + entry.Key);
+            outputBox.Items.Add("   Context: " + context);
             outputBox.Items.Add("1. None of the words below are correct");
             for(int i = 0; i < 10; i++)
             {
@@ -223,12 +229,19 @@ namespace PA5
             }
         }
 
-        private void StartProgram_Click(object sender, RoutedEventArgs e)
+        private List<string>GetList()
         {
             // 2. Prompt input file 
             string inputFile = InputFile.Text;
             StreamReader reader = new StreamReader($".../.../{inputFile}");
             List<string> toCorrectList = reader.ReadToEnd().Split(' ').ToList();
+            return toCorrectList;
+
+        }
+
+        private void StartProgram_Click(object sender, RoutedEventArgs e)
+        {
+            List<string> toCorrectList = GetList();
 
             // Find misspelled words
             List<string> misspelled = FindMisspelled(toCorrectList);
@@ -252,6 +265,9 @@ namespace PA5
             }
 
             KeyValuePair<string, List<string>> entry = suggestionMap.First();
+            string context = GetContext(entry.Key, toCorrectList);
+            outputBox.Items.Add("Unknown word: " + entry.Key);
+            outputBox.Items.Add("   Context: " + context);
             outputBox.Items.Add("1. None of the words below are correct");
             for(int i = 0; i < 10; i++)
             {
@@ -260,6 +276,33 @@ namespace PA5
 
             }
             selectionBox.Focus();
+        }
+
+        public string GetContext(string unknown_word, List<string> list)
+        {
+            // to get context get the word before unknown word
+            string return_string = "";
+            int word_index = 0;
+            for(int i = 0; i< list.Count; i++)
+            {
+                if(list[i] == unknown_word)
+                {
+                    if(i - 1 >= 0)
+                    {
+                        return_string += list[i - 1] + " ";
+                    }
+                    return_string += unknown_word + " ";
+                    word_index = i;
+                    break;
+                }
+            }
+            // add next 3 words
+            for(int i = word_index + 1; i < list.Count; i++)
+            {
+                return_string += list[i] + " ";
+            }
+
+            return return_string;
         }
     }
 }
