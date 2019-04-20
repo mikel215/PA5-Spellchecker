@@ -73,6 +73,10 @@ namespace PA5
 
             foreach(string word in list)
             {
+                if(word == "\r\n")
+                {
+                    continue;
+                }
                 // strip punctuation
                 string newWord = new string(word.Where(c => !char.IsPunctuation(c)).ToArray());
 
@@ -160,6 +164,7 @@ namespace PA5
 
             string input = selectionBox.Text;
             KeyValuePair<string, List<string>> item = glbl_queue.Dequeue();
+            List<string> toCorrectList = GetList();
 
             // make results list
             int inputNum = Int32.Parse(input);
@@ -182,7 +187,8 @@ namespace PA5
                 outputBox.Items.Clear();
                 selectionBox.Clear();
 
-                string path = OutputFile.Text;
+                // first, write autocorrect results to file.
+                string pathAutoCorrect= "autocorrect_results.csv";
                 string txtToFile = "";
                 foreach(KeyValuePair<string,List<string>> c in toWrite)
                 {
@@ -193,9 +199,42 @@ namespace PA5
                     }
                     txtToFile += "\r\n";
                 }
-                File.WriteAllText(path, txtToFile);
+                File.WriteAllText(pathAutoCorrect, txtToFile);
 
+                // second, correct misspellings then output to specified file
+                string pathCorrected = OutputFile.Text;
+                string finalString = "";
+                foreach(string word in toCorrectList)
+                {
+                    if(word == "\r\n")
+                    {
+                        finalString += "\r\n";
+                        continue;
+                    }
+                    string punctBegin = "";
+                    string punctEnd = "";
+                    // strip punctuation for comparison
+                    string newWord = new string(word.Where(c => !char.IsPunctuation(c)).ToArray());
 
+                    if(toWrite.ContainsKey(newWord)) // if word is misspelled replace it while keeping punctuation
+                    {
+                        if(char.IsPunctuation(word[0])) // get punctuation at beginning
+                        {
+                            punctBegin = word[0].ToString();
+                        }
+                        if(char.IsPunctuation(word[word.Length - 1])) // get punctuation at end
+                        {
+                            punctEnd = word[word.Length - 1].ToString();
+                        }
+                        // get the first suggestion for misspelled word, swap them
+                        string correctWord = toWrite[newWord][0];
+                        finalString += punctBegin + correctWord + punctEnd + " ";
+                        continue;
+                        
+                    }
+                    finalString += word + " ";
+                }
+                File.WriteAllText(pathCorrected, finalString);
                 outputBox.Items.Add("Results written to file.");
                 
                 return;
@@ -206,7 +245,6 @@ namespace PA5
             outputBox.Items.Clear();
             selectionBox.Clear();
 
-            List<string> toCorrectList = GetList();
             string context = GetContext(entry.Key, toCorrectList);
             outputBox.Items.Add("Unknown word: " + entry.Key);
             outputBox.Items.Add("   Context: " + context);
@@ -234,7 +272,23 @@ namespace PA5
             // 2. Prompt input file 
             string inputFile = InputFile.Text;
             StreamReader reader = new StreamReader($".../.../{inputFile}");
-            List<string> toCorrectList = reader.ReadToEnd().Split(' ').ToList();
+            List<string> list = reader.ReadToEnd().
+                Split(' ').ToList();
+
+            List<string> toCorrectList = new List<string>();
+            foreach(string word in list)
+            {
+                if(word.Contains("\r\n"))
+                {
+                    string[] newlineSplit = word.Split(new char[] { '\r', '\n' }, 2);
+                    string[] second = newlineSplit[1].Split('\n');
+                    toCorrectList.Add(newlineSplit[0]);
+                    toCorrectList.Add("\r\n");
+                    toCorrectList.Add(second[1]);
+                    continue;
+                }
+                toCorrectList.Add(word);
+            }
             return toCorrectList;
 
         }
