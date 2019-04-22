@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Data.SQLite;
+using System.Data.Entity.Design.PluralizationServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -121,6 +122,7 @@ namespace PA5
                 foreach(KeyValuePair<string,List<string>> item in suggestionMap)
                 {
                     glbl_queue.Enqueue(item);
+
                 }
             }
             else
@@ -193,6 +195,7 @@ namespace PA5
             File.WriteAllText("./.../.../autocorrect_results.csv", txtToFile);
 
             // second, correct misspellings then output to specified file
+            var serv = PluralizationService.CreateService(new System.Globalization.CultureInfo("en-us"));
             string finalString = "";
             foreach (string word in list)
             {
@@ -205,6 +208,11 @@ namespace PA5
                 string punctEnd = "";
                 // strip punctuation for comparison
                 string newWord = new string(word.Where(c => !char.IsPunctuation(c)).ToArray());
+                bool toPlural = false;
+                if(newWord[newWord.Length - 1] == 's' || newWord[newWord.Length - 1] == 'z')
+                {
+                    toPlural = true;
+                }
 
                 if (toWrite.ContainsKey(newWord)) // if word is misspelled replace it while keeping punctuation
                 {
@@ -217,9 +225,18 @@ namespace PA5
                         punctEnd = word[word.Length - 1].ToString();
                     }
                     // get the first suggestion for misspelled word, swap them
-                    string correctWord = toWrite[newWord][0];
-                    finalString += punctBegin + correctWord + punctEnd + " ";
-                    continue;
+                    if(toPlural == true)
+                    {
+                        string correctWord = serv.Pluralize(toWrite[newWord][0]);
+                        finalString += punctBegin + correctWord + punctEnd + " ";
+                        continue;
+                    }
+                    else
+                    {
+                        string correctWord = toWrite[newWord][0];
+                        finalString += punctBegin + correctWord + punctEnd + " ";
+                        continue;
+                    }
 
                 }
                 finalString += word + " ";
