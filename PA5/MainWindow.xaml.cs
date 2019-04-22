@@ -27,6 +27,7 @@ namespace PA5
         // 1. Read words from text to list(our dictionary)
         public static readonly string[] wordFile = File.ReadAllLines(@".../.../words.txt");
         public static readonly List<string> dictionaryList = new List<string>(wordFile);
+        bool fileOrDB = false; // default file storage, true for DB
 
         public MainWindow()
         {
@@ -76,8 +77,14 @@ namespace PA5
                 outputBox.Items.Clear();
                 selectionBox.Clear();
 
-                WriteToFile(toCorrectList);
-                WriteToDatabase(toCorrectList);
+                if(fileOrDB == true)
+                {
+                    WriteToDatabase();
+                }
+                else
+                {
+                    WriteToFile(toCorrectList);
+                }
                 return;
 
             }
@@ -124,19 +131,49 @@ namespace PA5
             OutputSuggestions(toCorrectList);
         }
 
-        private void WriteToDatabase(List<string> list)
+        private void WriteToDatabase()
         {
             SQLiteConnection myConnection = 
                              new SQLiteConnection("Data Source=./.../.../wordDB.db;Version=3;New=False;FailIfMissing=True");
-            myConnection.Open();
+            try
+            {
+                myConnection.Open();
 
-            string query = "insert into " +
-                           "suggestion(suggestion_id, suggestion_word, priority) " +
-                           "values(3001, 'yeah', 1) ";
-            SQLiteCommand insertInto = new SQLiteCommand(query, myConnection);
+                foreach(KeyValuePair<string,List<string>> kv_pair in toWrite)
+                {
+                    // add misspelling
+                    string misspellingQuery = "insert into misspelled(misspelled_word) " +
+                                              "values(" +"'" + kv_pair.Key +"'"+ ")";
+                    SQLiteCommand insertQuery1 = new SQLiteCommand(misspellingQuery, myConnection);
+                    insertQuery1.ExecuteNonQuery();
 
-            insertInto.ExecuteNonQuery();
-            myConnection.Close();
+                    // add suggestions
+                    string fkQuery = "select misspelled_id " +
+                                     "from   misspelled " +
+                                     "where  misspelled_word = " + "'"+kv_pair.Key+"'";
+                    SQLiteCommand select = new SQLiteCommand(fkQuery, myConnection);
+                    SQLiteDataReader dr = select.ExecuteReader();
+                    dr.Read();
+                    int foreignKey = Int32.Parse(dr["misspelled_id"].ToString());
+                    int count = 1;
+                    foreach(string suggestion in kv_pair.Value)
+                    {
+                        
+                        string suggestionQuery = "insert into " +
+                                       "suggestion(suggestion_word, priority,suggestion_for) " +
+                                       "values(" +"'"+suggestion+"'"+ ", "+count+", "+
+                                        foreignKey+ ")";
+                        SQLiteCommand insertQuery2 = new SQLiteCommand(suggestionQuery, myConnection);
+                        insertQuery2.ExecuteNonQuery();
+                        count++;
+                    }
+                }
+                myConnection.Close();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
             return;
         }
 
@@ -153,7 +190,7 @@ namespace PA5
                 }
                 txtToFile += "\r\n";
             }
-            File.WriteAllText("autocorrect_results.csv", txtToFile);
+            File.WriteAllText("./.../.../autocorrect_results.csv", txtToFile);
 
             // second, correct misspellings then output to specified file
             string finalString = "";
@@ -380,6 +417,16 @@ namespace PA5
 
         }
 
+        private void FileButton_Click(object sender, RoutedEventArgs e)
+        {
+            fileOrDB = false;
+            ChoiceBox.Text = "File Store";
+        }
 
+        private void DBButton_Click(object sender, RoutedEventArgs e)
+        {
+            fileOrDB = true;
+            ChoiceBox.Text = "Database";
+        }
     }
 }
